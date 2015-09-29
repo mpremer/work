@@ -1,11 +1,11 @@
-For looping with ggplo2
+For looping with ggplot2
 
 library(dplyr)
 library(ggplot2)
 
 # any stand names with characters "/" will need to be modified to delete these characters
 
-dataset <- read.csv("S:/Client/Potlatch/0101337_SOW129_NI_CruiseSupport/QAQC/CHECK_AGE_RANGES.csv",head=TRUE)
+dataset <- read.csv("S:/Client/CruiseSupport/QAQC/CHECK_AGE_RANGES.csv",head=TRUE)
 dataset <- filter(dataset, Status=="INCOMING")
 dataset["TreeUsedForCalculation"] <- factor(dataset$TreeUsedForCalculation)
 dataset["CalculatedStandAge"] <- as.numeric(dataset$CalculatedStandAge)
