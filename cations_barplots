@@ -1,0 +1,53 @@
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(nlme)
+library(lattice)
+
+cations <- read.csv("C:/Users/Mike/Desktop/Dissertation/chapter2/cations.csv")
+
+## barplot, no temporal effect in regression estimates and large variance within soil types
+
+cation.bar <- read.csv("C:/Users/Mike/Desktop/Dissertation/chapter2/soils/cations/raw/csv/cation_barplot.csv",head=TRUE)
+
+ca <- filter(cation.bar, nutrient=="calcium")
+cols <- c(chip="darkgrey",rw="gray50")
+
+caplot <- ggplot(data=ca, aes(x=soil.type, y=mean, fill=Treatment))+
+  geom_bar(colour="black",stat="identity",position="dodge")+
+  geom_errorbar(aes(ymin=mean-se,ymax=mean+se), width=.2,
+                position=position_dodge(.9))+
+  scale_fill_manual(values=cols,
+                    labels=c("WTH","SOH"))+
+  xlab("Soil types")+
+  ylab(bquote('Exchangeable Calcium'~ ('Mg' ~ ha^{-1})))+
+  theme_bw()
+
+k <- filter(cation.bar, nutrient=="potassium")
+cols <- c(chip="darkgrey",rw="gray50")
+
+
+kplot <- ggplot(data=k, aes(x=soil.type, y=mean, fill=Treatment))+
+  geom_bar(colour="black",stat="identity",position="dodge")+
+  geom_errorbar(aes(ymin=mean-se,ymax=mean+se), width=.2,
+                position=position_dodge(.9))+
+  scale_fill_manual(values=cols,
+                    labels=c("WTH","SOH"))+
+  xlab("Soil types")+
+  ylab(bquote('Exchangeable Potassium'~ ('Mg' ~ ha^{-1})))+
+  theme_bw()
+
+Mg <- filter(cation.bar, nutrient=="magnesium")
+cols <- c(chip="darkgrey",rw="gray50")
+
+Mgplot <- ggplot(data=Mg, aes(x=soil.type, y=mean, fill=Treatment))+
+  geom_bar(colour="black",stat="identity",position="dodge")+
+  geom_errorbar(aes(ymin=mean-se,ymax=mean+se), width=.2,
+                position=position_dodge(.9))+
+  scale_fill_manual(values=cols,
+                    labels=c("WTH","SOH"))+
+  xlab("Soil types")+
+  ylab(bquote('Exchangeable Magnesium'~ ('Mg' ~ ha^{-1})))+
+  theme_bw()
+
+grid.arrange(caplot,kplot,Mgplot,ncol=1)
