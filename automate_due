@@ -1,0 +1,79 @@
+# this is working from a FPS database
+
+library(readxl)
+library(dplyr)
+library(xlsx)
+
+# export admin and stand tables from access as excel files
+admin <- read_excel("C:/Users/mpremer/Desktop/ADMIN.xls")
+stand <- read_excel("C:/Users/mpremer/Desktop/STAND.xls")
+
+# join the tables by the stand identifier
+dataset <- left_join(admin,stand,by="STD_ID")
+dataset["STAND"] <- (dataset$BoardNet*dataset$AREA_RPT)/1000
+# only choose even aged forests at least 35 years old and greater than 10 acres
+dataset <- filter(dataset, LandUse=="FE" & StandAge > 34 & AREA_RPT > 9.99)
+
+# check
+length(unique(dataset$STD_ID))
+sum(dataset$MBF_STAND)
+sum(dataset$AREA_RPT)
+# all good, proceed
+
+# create an age and site index class for graphical representation if needed
+# order stands by MBF to create a cumulative calculation to create the random sample
+dataset <- dataset %>%
+  mutate(age.class = 10*as.integer((StandAge+(10/2))/10))%>%
+  mutate(si.class = 5*as.integer((SITE_PHY+(5/2))/5)) %>%
+  mutate(cumulative.mbf= cumsum(MBF_STAND))
+
+# Select only the rows we want
+dataset <- select(dataset,STD_ID,StandID,TBR_LBL,StandAge,age.class,SITE_PHY,si.class,AREA_RPT,AREA_GIS,Trees,QDBH,BASAL,BoardNet,MBF_STAND,cumulative.mbf)
+dataset <- dataset[order(dataset$cumulative.mbf), ]
+
+# Create a random sample of stands based on pps sampling of stand volume
+  # user needs to define the sample size
+random_list <- as.data.frame(sample(dataset$cumulative.mbf,size=50,replace=FALSE))
+names(random_list)[1] <- "random"
+random_list["count"] <- 1
+random_list["priority"] <- 1:50
+  # user needs to define priority and alternate numbers of stands
+random_list$priority[1:40] <- "primary"
+random_list$priority[41:50] <- "alternate"
+random_list["stand_list"] <- 1:50
+
+# join the random list to the dataframe
+dataset <- left_join(dataset,random_list,by=c("cumulative.mbf" = "random"))
+dataset <- dataset%>%
+  mutate_each(funs(round(.,1)),AREA_RPT,AREA_GIS,QDBH)%>%
+  mutate_each(funs(round(.,2)),BASAL,BoardNet,MBF_STAND,cumulative.mbf)
+dataset <- rename(dataset, Site_index=SITE_PHY,Area_net=AREA_RPT,Area_gross=AREA_GIS,TPA=Trees,QMD=QDBH,ba.acre=BASAL,bf.acre=BoardNet)
+dataset[is.na(dataset)] <- 0
+# write this out to the working directory
+
+setwd("C:/Users/mpremer/Desktop")
+# write the population file to the working directory
+write.xlsx(dataset, "C:/Users/mpremer/Desktop/Snoqualmie_stand_summary.xlsx",sheetName="Population")
+
+# create a list to send to GIS of selected stands
+for_gis <- filter(dataset, count=="1")
+# need to define plots by stand size, could be done with a conditional if statement, 
+    #but brute force can work for now
+  # user needs to define plot count by stand acreage
+small_stands <- filter(for_gis, Area_net <20)
+small_stands["plots"] <- small_stands$Area_net
+large_stands <- filter(for_gis, Area_net > 99.9)
+large_stands["plots"] <- large_stands$Area_net/5
+med_stands <- filter(for_gis, Area_net>19.99 & Area_net<100 )
+med_stands["plots"] <- 20
+for_gis <- rbind(small_stands,med_stands,large_stands)
+for_gis$plots <- ceiling(for_gis$plots)
+for_gis <- for_gis[order(for_gis$stand_list),]
+
+sum(for_gis$Area_net)
+sum(for_gis$plots)
+
+write.xlsx(for_gis, "C:/Users/mpremer/Desktop/Snoqualmie_stand_summary_for_gis.xlsx",sheetName="for_gis")
+
+dev.off
+rm(list=ls())
