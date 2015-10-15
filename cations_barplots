@@ -1,7 +1,6 @@
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
-library(nlme)
 library(lattice)
 
 cations <- read.csv("C:/Users/Mike/Desktop/Dissertation/chapter2/cations.csv")
