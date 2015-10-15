@@ -62,10 +62,6 @@ names(checkcrsummary)[2] <- "PlotID"
 names(checkcrsummary)[3] <- "TreeNumber"
 names(checkcrsummary)[4] <- "CRpoints"
 
-View(checkdbhsummary)
-View(checkhtsummary)
-View(checkcrsummary)
-
 checkdata <- left_join(checkdbhsummary,checkhtsummary)
 checkdata <- left_join(checkdata,checkcrsummary)
 checkdata["Total"] <- (checkdata$DBHpoints+checkdata$Htpoints+checkdata$CRpoints)
