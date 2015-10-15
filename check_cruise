@@ -1,0 +1,85 @@
+# October 14 2015
+# Sorting through Check cruise Data
+# Premer, M.I.
+
+# load libraries
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+
+# __________ cruise
+# Read raw file 
+checkcruise <- read_excel("C:/Users/mpremer/Desktop/Cruise_Data_2015-10-14-11-30-31.xls",sheet="Trees")
+str(checkcruise)
+checkcruise$DBH <- as.numeric(checkcruise$DBH)
+checkcruise$TotalHeight <- as.numeric(checkcruise$TotalHeight)
+checkcruise$CrownRatio <- as.numeric(checkcruise$CrownRatio)
+checkcruise$TreeNumber <- as.numeric(checkcruise$TreeNumber)
+checkcruise["checked.dbh"] <- as.numeric(checkcruise$`Check DBH`> 0.1)
+checkcruise["checked.ht"] <- as.numeric(checkcruise$`Check Height`> 0.1)
+checkcruise["checked.cr"] <- as.numeric(checkcruise$`Check CR`> 0.1)
+checkdata <- filter(checkcruise, checked.dbh == 1|checked.ht ==1|checked.cr ==1 )
+
+ntrees <- checkdata %>%
+  distinct(TreeNumber,PlotNumber)%>%
+  count(PlotNumber)
+
+checkdatasummary <- checkdata %>%
+  mutate(DBHdiff = `Check DBH`-DBH)%>%
+  mutate(Htdiff = `Check Height`-TotalHeight)%>%
+  mutate(PercentHt = (Htdiff/`Check Height`)*100) %>%
+  mutate(CRdiff = `Check CR`-CrownRatio) %>%
+  group_by(StandID, PlotNumber, TreeNumber)%>%
+  summarize(DBHdifference = sum(DBHdiff),
+            HTdifferencePercent = sum(PercentHt),
+            CRdifference = sum(CRdiff)) 
+
+# yeah, it's messy, need to find a faster way to code conditional statements
+checkdatasummary[is.na(checkdatasummary)] <- 0
+checkdbhsummary <- data.frame(checkdatasummary$StandID,
+                              checkdatasummary$PlotNumber,
+                              checkdatasummary$TreeNumber,ifelse(checkdatasummary$DBHdifference > 0.2, 3, 
+                                                                 ifelse(checkdatasummary$DBHdifference < 0.3,0,NA)))
+names(checkdbhsummary)[1] <- "StandID"
+names(checkdbhsummary)[2] <- "PlotID"
+names(checkdbhsummary)[3] <- "TreeNumber"
+names(checkdbhsummary)[4] <- "DBHpoints"
+checkhtsummary <- data.frame(checkdatasummary$StandID,
+                             checkdatasummary$PlotNumber,
+                             checkdatasummary$TreeNumber,ifelse(checkdatasummary$HTdifferencePercent > 7, 2, 
+                                                                ifelse(checkdatasummary$HTdifferencePercent < 7,0,NA)))
+names(checkhtsummary)[1] <- "StandID"
+names(checkhtsummary)[2] <- "PlotID"
+names(checkhtsummary)[3] <- "TreeNumber"
+names(checkhtsummary)[4] <- "Htpoints"
+checkcrsummary <- data.frame(checkdatasummary$StandID,
+                             checkdatasummary$PlotNumber,
+                             checkdatasummary$TreeNumber,ifelse(checkdatasummary$CRdifference > 10, 2, 
+                                                                ifelse(checkdatasummary$CRdifference < 10,0,NA)))
+names(checkcrsummary)[1] <- "StandID"
+names(checkcrsummary)[2] <- "PlotID"
+names(checkcrsummary)[3] <- "TreeNumber"
+names(checkcrsummary)[4] <- "CRpoints"
+
+View(checkdbhsummary)
+View(checkhtsummary)
+View(checkcrsummary)
+
+checkdata <- left_join(checkdbhsummary,checkhtsummary)
+checkdata <- left_join(checkdata,checkcrsummary)
+checkdata["Total"] <- (checkdata$DBHpoints+checkdata$Htpoints+checkdata$CRpoints)
+checkdata["Totalpossible"] <- 7
+checkdata["Result"] <- 100-((checkdata$Total/checkdata$Totalpossible)*100)
+checkdata[is.na(checkdata)] <- 0
+
+plotsummary <- checkdata %>%
+  group_by(StandID, PlotID)%>%
+  summarize(result = 100-((sum(Total))/(sum(Totalpossible))*100))
+
+setwd("C:/Users/mpremer/Desktop")
+file.name <- "checkcruise_plot_summary_results"
+write.csv(plotsummary, file=paste0(file.name,".csv")) 
+
+rm(list=ls())
+dev.off
