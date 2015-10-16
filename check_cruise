@@ -1,4 +1,4 @@
-# October 14 2015
+# October 16 2015
 # Sorting through Check cruise Data
 # Premer, M.I.
 
@@ -9,9 +9,11 @@ library(ggplot2)
 library(gridExtra)
 
 # __________ cruise
-# Read raw file 
+# Read raw file from the MB&G Web App
 checkcruise <- read_excel("C:/Users/mpremer/Desktop/Cruise_Data_2015-10-14-11-30-31.xls",sheet="Trees")
 str(checkcruise)
+
+# Data needs to be numeric, currently set as Character
 checkcruise$DBH <- as.numeric(checkcruise$DBH)
 checkcruise$TotalHeight <- as.numeric(checkcruise$TotalHeight)
 checkcruise$CrownRatio <- as.numeric(checkcruise$CrownRatio)
@@ -21,60 +23,84 @@ checkcruise["checked.ht"] <- as.numeric(checkcruise$`Check Height`> 0.1)
 checkcruise["checked.cr"] <- as.numeric(checkcruise$`Check CR`> 0.1)
 checkdata <- filter(checkcruise, checked.dbh == 1|checked.ht ==1|checked.cr ==1 )
 
+
+# Calculate tree count per plot
 ntrees <- checkdata %>%
-  distinct(TreeNumber,PlotNumber)%>%
+  distinct(TreeNumber,PlotNumber, StandID)%>%
   count(PlotNumber)
 
 checkdatasummary <- checkdata %>%
   mutate(DBHdiff = `Check DBH`-DBH)%>%
-  mutate(Htdiff = `Check Height`-TotalHeight)%>%
+  mutate(Htdiff = `Check Height`- TotalHeight)%>%
   mutate(PercentHt = (Htdiff/`Check Height`)*100) %>%
   mutate(CRdiff = `Check CR`-CrownRatio) %>%
-  group_by(StandID, PlotNumber, TreeNumber)%>%
-  summarize(DBHdifference = sum(DBHdiff),
-            HTdifferencePercent = sum(PercentHt),
-            CRdifference = sum(CRdiff)) 
+  mutate(spcheck = `Species` == `Check Species`)%>%
+  mutate(groupcheck = `CompCode` == `Component`)
 
-# yeah, it's messy, need to find a faster way to code conditional statements
-checkdatasummary[is.na(checkdatasummary)] <- 0
-checkdbhsummary <- data.frame(checkdatasummary$StandID,
-                              checkdatasummary$PlotNumber,
-                              checkdatasummary$TreeNumber,ifelse(checkdatasummary$DBHdifference > 0.2, 3, 
-                                                                 ifelse(checkdatasummary$DBHdifference < 0.3,0,NA)))
+data <- select(checkdatasummary, StandID, PlotNumber, TreeNumber, DBHdiff, Htdiff, 
+               PercentHt, CRdiff, spcheck, groupcheck)
+data[is.na(data)] <- 0
+
+checkdbhsummary <- data.frame(data$StandID,
+                              data$PlotNumber,
+                              data$TreeNumber,ifelse(data$DBHdiff > 0.2, 3, 
+                                                                 ifelse(data$DBHdiff < 0.3,0,NA)))
 names(checkdbhsummary)[1] <- "StandID"
 names(checkdbhsummary)[2] <- "PlotID"
 names(checkdbhsummary)[3] <- "TreeNumber"
 names(checkdbhsummary)[4] <- "DBHpoints"
-checkhtsummary <- data.frame(checkdatasummary$StandID,
-                             checkdatasummary$PlotNumber,
-                             checkdatasummary$TreeNumber,ifelse(checkdatasummary$HTdifferencePercent > 7, 2, 
-                                                                ifelse(checkdatasummary$HTdifferencePercent < 7,0,NA)))
+
+checkhtsummary <- data.frame(data$StandID,
+                             data$PlotNumber,
+                             data$TreeNumber,ifelse(data$PercentHt > 7, 2, 
+                                                                ifelse(data$PercentHt < 7,0,NA)))
 names(checkhtsummary)[1] <- "StandID"
 names(checkhtsummary)[2] <- "PlotID"
 names(checkhtsummary)[3] <- "TreeNumber"
 names(checkhtsummary)[4] <- "Htpoints"
-checkcrsummary <- data.frame(checkdatasummary$StandID,
-                             checkdatasummary$PlotNumber,
-                             checkdatasummary$TreeNumber,ifelse(checkdatasummary$CRdifference > 10, 2, 
-                                                                ifelse(checkdatasummary$CRdifference < 10,0,NA)))
+
+checkcrsummary <- data.frame(data$StandID,
+                             data$PlotNumber,
+                             data$TreeNumber,ifelse(data$CRdiff > 10, 2, 
+                                                                ifelse(data$CRdiff < 10,0,NA)))
 names(checkcrsummary)[1] <- "StandID"
 names(checkcrsummary)[2] <- "PlotID"
 names(checkcrsummary)[3] <- "TreeNumber"
 names(checkcrsummary)[4] <- "CRpoints"
 
-checkdata <- left_join(checkdbhsummary,checkhtsummary)
-checkdata <- left_join(checkdata,checkcrsummary)
-checkdata["Total"] <- (checkdata$DBHpoints+checkdata$Htpoints+checkdata$CRpoints)
-checkdata["Totalpossible"] <- 7
-checkdata["Result"] <- 100-((checkdata$Total/checkdata$Totalpossible)*100)
-checkdata[is.na(checkdata)] <- 0
+checkspsummary <- data.frame(data$StandID,
+                             data$PlotNumber,
+                             data$TreeNumber,ifelse(data$spcheck == "FALSE", 3, 
+                                                    ifelse(data$spcheck == "TRUE",0,NA)))
+names(checkspsummary)[1] <- "StandID"
+names(checkspsummary)[2] <- "PlotID"
+names(checkspsummary)[3] <- "TreeNumber"
+names(checkspsummary)[4] <- "specpoints"
 
-plotsummary <- checkdata %>%
+checkgpsummary <- data.frame(data$StandID,
+                             data$PlotNumber,
+                             data$TreeNumber,ifelse(data$groupcheck == "FALSE", 2, 
+                                                    ifelse(data$groupcheck == "TRUE",0,NA)))
+names(checkgpsummary)[1] <- "StandID"
+names(checkgpsummary)[2] <- "PlotID"
+names(checkgpsummary)[3] <- "TreeNumber"
+names(checkgpsummary)[4] <- "gppoints"
+
+data <- cbind(checkdbhsummary,checkhtsummary,checkcrsummary,checkspsummary,checkgpsummary)
+data <- data[,c("StandID","PlotID","TreeNumber","DBHpoints","Htpoints","CRpoints","specpoints","gppoints")]
+data[is.na(data)] <- 0
+
+data["Totaldeduct"] <- (data$DBHpoints+data$Htpoints+data$CRpoints+data$specpoints+data$gppoints)
+data["Totalpossible"] <- 12
+data["Result"] <- 100-((data$Totaldeduct/data$Totalpossible)*100)
+data[is.na(data)] <- 0
+
+plotsummary <- data %>%
   group_by(StandID, PlotID)%>%
-  summarize(result = 100-((sum(Total))/(sum(Totalpossible))*100))
+  summarize(result = 100-((sum(Totaldeduct))/(sum(Totalpossible))*100))
 
 setwd("C:/Users/mpremer/Desktop")
-file.name <- "checkcruise_plot_summary_results"
+file.name <- "plot_summary_results"
 write.csv(plotsummary, file=paste0(file.name,".csv")) 
 
 rm(list=ls())
