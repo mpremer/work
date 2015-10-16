@@ -23,12 +23,6 @@ checkcruise["checked.ht"] <- as.numeric(checkcruise$`Check Height`> 0.1)
 checkcruise["checked.cr"] <- as.numeric(checkcruise$`Check CR`> 0.1)
 checkdata <- filter(checkcruise, checked.dbh == 1|checked.ht ==1|checked.cr ==1 )
 
-
-# Calculate tree count per plot
-ntrees <- checkdata %>%
-  distinct(TreeNumber,PlotNumber, StandID)%>%
-  count(PlotNumber)
-
 checkdatasummary <- checkdata %>%
   mutate(DBHdiff = `Check DBH`-DBH)%>%
   mutate(Htdiff = `Check Height`- TotalHeight)%>%
