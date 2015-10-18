@@ -1,8 +1,6 @@
 For looping with ggplot2
-
 library(dplyr)
 library(ggplot2)
-
 # any stand names with characters "/" will need to be modified to delete these characters
 
 dataset <- read.csv("S:/Client/CruiseSupport/QAQC/CHECK_AGE_RANGES.csv",head=TRUE)
@@ -14,11 +12,7 @@ dataset <- dataset[order(dataset$STAND), ]
 dataset["standageID"] <- paste(" Stand_Num=",dataset$Stand_Num,"Location_ID=",dataset$Location_ID,
                                " Stand_Name=",dataset$Stand_Name," Stand Age=",dataset$CalculatedStandAge)
 stand_list <- unique(dataset$standageID)
-
-# with ggplot
-
 theme_set(theme_bw(24)) # set color scheme of background
-
 for (i in stand_list)
 {
   plot_data = subset(dataset,standageID==i)
@@ -33,7 +27,5 @@ for (i in stand_list)
     ylim(0,150)
   ggsave(filename=paste("Stand ",i,".pdf",sep=""),width=12,plot=plot,dpi=72)
 }
-
 dev.off
-
 rm(list=ls())
