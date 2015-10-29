@@ -102,6 +102,6 @@ CA.merch.timber <- ca.merch.stand %>%
             SUPI = sum(supi.mbf),
             TFIR = sum(Tfir.mbf))
 
-write.xlsx(CA.merch.timber, "C:/Users/mpremer/Desktop/CA_tree_farms_standlister.xlsx",sheetName = "TimberByUnit",append=TRUE) # write out the excel file to the specified directory
+write.xlsx(CA.merch.timber, "C:/Users/mpremer/Desktop/CA_tree_farms_standlister.xlsx",sheetName = "TimberByUnit",append=TRUE)
 dev.off
 rm(list=ls())
