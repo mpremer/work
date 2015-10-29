@@ -3,7 +3,7 @@ library(dplyr)
 library(xlsx) 
 
 treefarms = list.files(path = "C:/Users/mpremer/Desktop/StandListers/stands/TreeFarms",pattern=".txt",
-                       full.names=TRUE,recursive=TRUE,include.dirs = TRUE) # Specify the location of the text files
+                       full.names=TRUE,recursive=TRUE,include.dirs = TRUE) 
 FIA.Tree.Farm = ldply(treefarms,read.table,sep="\t",header=TRUE)
 Tree.Farm <- arrange(Tree.Farm, Mu)
 unit.name <- data.frame(unique(Tree.Farm$Mu))
@@ -17,7 +17,7 @@ Acres <- Tree.Farm %>%
   group_by(Mu)%>%
   summarize(net.acres = sum(Net.Area),
             gross.acres = sum(Current.Gross.Area))
-write.xlsx(OR.WA.Acres, "C:/Users/mpremer/Desktop/Tree_farms_standlister.xlsx",sheetName="UnitAcres",append = TRUE) # write out the excel file to the specified directory
+write.xlsx(OR.WA.Acres, "C:/Users/mpremer/Desktop/Tree_farms_standlister.xlsx",sheetName="UnitAcres",append = TRUE)
 
 merch.stand.31 <- c("# Enter farm names merch. at 31 here")
 merch.stand.31 <- filter(Tree.Farm, Mu %in% merch.stand.31 & Age >30 & Landusedesc == "CF")
@@ -61,7 +61,7 @@ CA.Acres <- CA.Tree.Farm %>%
   group_by(Mu)%>%
   summarize(net.acres = sum(Net.Area),
             gross.acres = sum(Current.Gross.Area))
-write.xlsx(CA.Acres, "C:/Users/mpremer/Desktop/CA_tree_farms_standlister.xlsx",sheetName = "UnitAcres",append=TRUE) # write out the excel file to the specified directory
+write.xlsx(CA.Acres, "C:/Users/mpremer/Desktop/CA_tree_farms_standlister.xlsx",sheetName = "UnitAcres",append=TRUE) 
 
 ca.merch.stand <- filter(CA.Tree.Farm, Age > 31 & Landusedesc == "CF")
 ca.merch.stand["Ald"] <- as.numeric(gsub(",","",ca.merch.stand$Ald))
