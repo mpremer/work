@@ -4,14 +4,14 @@ library(xlsx)
 
 treefarms = list.files(path = "C:/Users/mpremer/Desktop/StandListers/stands/TreeFarms",pattern=".txt",
                        full.names=TRUE,recursive=TRUE,include.dirs = TRUE) 
-FIA.Tree.Farm = ldply(treefarms,read.table,sep="\t",header=TRUE)
+Tree.Farm = ldply(treefarms,read.table,sep="\t",header=TRUE)
 Tree.Farm <- arrange(Tree.Farm, Mu)
 unit.name <- data.frame(unique(Tree.Farm$Mu))
 names(unit.name)[1] <- "Mu"
 unit.name["Client"] <- c("Client.names")
 Tree.Farm <- left_join(Tree.Farm,unit.name)
 setwd("C:/Users/mpremer/Desktop") # set the working directory
-write.xlsx(FIA.Tree.Farm, "C:/Users/mpremer/Desktop/Tree_farms_standlister.xlsx",sheetName="StandLister") 
+write.xlsx(Tree.Farm, "C:/Users/mpremer/Desktop/Tree_farms_standlister.xlsx",sheetName="StandLister") 
 
 Acres <- Tree.Farm %>%
   group_by(Mu)%>%
