@@ -1,0 +1,107 @@
+library(plyr) 
+library(dplyr)
+library(xlsx) 
+
+treefarms = list.files(path = "C:/Users/mpremer/Desktop/StandListers/stands/TreeFarms",pattern=".txt",
+                       full.names=TRUE,recursive=TRUE,include.dirs = TRUE) # Specify the location of the text files
+FIA.Tree.Farm = ldply(treefarms,read.table,sep="\t",header=TRUE)
+Tree.Farm <- arrange(Tree.Farm, Mu)
+unit.name <- data.frame(unique(Tree.Farm$Mu))
+names(unit.name)[1] <- "Mu"
+unit.name["Client"] <- c("Client.names")
+Tree.Farm <- left_join(FIA.Tree.Farm,unit.name)
+setwd("C:/Users/mpremer/Desktop") # set the working directory
+write.xlsx(FIA.Tree.Farm, "C:/Users/mpremer/Desktop/Tree_farms_standlister.xlsx",sheetName="StandLister") 
+
+Acres <- Tree.Farm %>%
+  group_by(Mu)%>%
+  summarize(net.acres = sum(Net.Area),
+            gross.acres = sum(Current.Gross.Area))
+write.xlsx(OR.WA.Acres, "C:/Users/mpremer/Desktop/FIA_tree_farms_standlister.xlsx",sheetName="UnitAcres",append = TRUE) # write out the excel file to the specified directory
+
+merch.stand.31 <- c("# Enter farm names merch. at 31 here")
+merch.stand.31 <- filter(Tree.Farm, Mu %in% merch.stand.31 & Age >30 & Landusedesc == "CF")
+merch.stand.35 <- c("# Enter farm names merch. at 35 here")
+merch.stand.35 <- filter(Tree.Farm, Mu %in% merch.stand.35 & Age >34 & Landusedesc == "CF")
+merch.stand <- rbind(merch.stand.31,merch.stand.35)
+merch.stand["Ald"] <- as.numeric(gsub(",","",merch.stand$Ald))
+merch.stand["Cedr"] <- as.numeric(gsub(",","",merch.stand$Cedr))
+merch.stand["Con"] <- as.numeric(gsub(",","",merch.stand$Con))
+merch.stand["Dfir"] <- as.numeric(gsub(",","",merch.stand$Dfir))
+merch.stand["Hdwd"] <- as.numeric(gsub(",","",merch.stand$Hdwd))
+merch.stand["Hem"] <- as.numeric(gsub(",","",merch.stand$Hem))
+
+merch.stand[is.na(merch.stand)] <- 0
+merch.timber <- merch.stand %>%
+  mutate(ald.mbf = (Ald*Net.Area)/1000)%>%
+  mutate(cedr.mbf = (Cedr*Net.Area)/1000)%>%
+  mutate(con.mbf = (Con*Net.Area)/1000)%>%
+  mutate(dfir.mbf = (Dfir*Net.Area)/1000)%>%
+  mutate(hdwd.mbf = (Hdwd*Net.Area)/1000)%>%
+  mutate(hem.mbf = (Hem*Net.Area)/1000)%>%
+  group_by(Mu)%>%
+  summarize(ALD = sum(ald.mbf),
+            CEDR = sum(cedr.mbf),
+            CON = sum(con.mbf),
+            DFIR = sum(dfir.mbf),
+            HDWD = sum(hdwd.mbf),
+            HEM = sum(hem.mbf))
+
+write.xlsx(merch.timber, "C:/Users/mpremer/Desktop/Tree_farms_standlister.xlsx",sheetName="TimberbyUnit",append=TRUE) 
+####################################################################################################
+# Now for the California property - differ in their species codes and groups
+CAtreefarms = list.files(path = "C:/Users/mpremer/Desktop/StandListers/stands/SV_FH",pattern=".txt",
+                         full.names=TRUE,recursive=TRUE,include.dirs = TRUE) # Specify the location of the text files
+CA.Tree.Farm = ldply(CAtreefarms,read.table,sep="\t",header=TRUE)
+CA.Tree.Farm <- arrange(CA.Tree.Farm, Mu)
+CA.Tree.Farm <- CA.Tree.Farm[-c(24:26,28:30,32:34,36:38,40:42,44:46,48:50,52:54,56:58,60:62,64:66,68)]
+write.xlsx(CA.Tree.Farm, "C:/Users/mpremer/Desktop/CA_tree_farms_standlister.xlsx",sheetName = "StandLister") 
+
+CA.Acres <- CA.Tree.Farm %>%
+  group_by(Mu)%>%
+  summarize(net.acres = sum(Net.Area),
+            gross.acres = sum(Current.Gross.Area))
+write.xlsx(CA.Acres, "C:/Users/mpremer/Desktop/CA_tree_farms_standlister.xlsx",sheetName = "UnitAcres",append=TRUE) # write out the excel file to the specified directory
+
+ca.merch.stand <- filter(CA.Tree.Farm, Age > 31 & Landusedesc == "CF")
+ca.merch.stand["Ald"] <- as.numeric(gsub(",","",ca.merch.stand$Ald))
+ca.merch.stand["Con"] <- as.numeric(gsub(",","",ca.merch.stand$Con))
+ca.merch.stand["Dfir"] <- as.numeric(gsub(",","",ca.merch.stand$Dfir))
+ca.merch.stand["Hdwd"] <- as.numeric(gsub(",","",ca.merch.stand$Hdwd))
+ca.merch.stand["Hem"] <- as.numeric(gsub(",","",ca.merch.stand$Hem))
+ca.merch.stand["Ince"] <- as.numeric(gsub(",","",ca.merch.stand$Ince))
+ca.merch.stand["Jepi"] <- as.numeric(gsub(",","",ca.merch.stand$Jepi))
+ca.merch.stand["Lopi"] <- as.numeric(gsub(",","",ca.merch.stand$Lopi))
+ca.merch.stand["Popi"] <- as.numeric(gsub(",","",ca.merch.stand$Popi))
+ca.merch.stand["Supi"] <- as.numeric(gsub(",","",ca.merch.stand$Supi))
+ca.merch.stand["Tfir"] <- as.numeric(gsub(",","",ca.merch.stand$Tfir))
+
+ca.merch.stand[is.na(ca.merch.stand)] <- 0
+CA.merch.timber <- ca.merch.stand %>%
+  mutate(ald.mbf = (Ald*Net.Area)/1000)%>%
+  mutate(con.mbf = (Con*Net.Area)/1000)%>%
+  mutate(dfir.mbf = (Dfir*Net.Area)/1000)%>%
+  mutate(hdwd.mbf = (Hdwd*Net.Area)/1000)%>%
+  mutate(hem.mbf = (Hem*Net.Area)/1000)%>%
+  mutate(ince.mbf = (Ince*Net.Area)/1000)%>%
+  mutate(jepi.mbf = (Jepi*Net.Area)/1000)%>%
+  mutate(lopi.mbf = (Lopi*Net.Area)/1000)%>%
+  mutate(popi.mbf = (Popi*Net.Area)/1000)%>%
+  mutate(supi.mbf = (Supi*Net.Area)/1000)%>%
+  mutate(Tfir.mbf = (Tfir*Net.Area)/1000)%>%
+  group_by(Mu)%>%
+  summarize(ALD = sum(ald.mbf),
+            CON = sum(con.mbf),
+            DFIR = sum(dfir.mbf),
+            HDWD = sum(hdwd.mbf),
+            HEM = sum(hem.mbf),
+            INCE = sum(ince.mbf),
+            JEPI = sum(jepi.mbf),
+            LOPI = sum(lopi.mbf),
+            POPI = sum(popi.mbf),
+            SUPI = sum(supi.mbf),
+            TFIR = sum(Tfir.mbf))
+
+write.xlsx(CA.merch.timber, "C:/Users/mpremer/Desktop/CA_tree_farms_standlister.xlsx",sheetName = "TimberByUnit",append=TRUE) # write out the excel file to the specified directory
+dev.off
+rm(list=ls())
