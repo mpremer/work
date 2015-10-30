@@ -73,7 +73,7 @@ for_gis <- for_gis[order(for_gis$stand_list),]
 sum(for_gis$Area_net)
 sum(for_gis$plots)
 
-write.xlsx(for_gis, "C:/Users/mpremer/Desktop/stand_summary_for_gis.xlsx",sheetName="for_gis")
+write.xlsx(for_gis, "C:/Users/mpremer/Desktop/stand_summary_for_gis.xlsx",sheetName="for_gis", append=TRUE)
 
 dev.off
 rm(list=ls())
