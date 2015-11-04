@@ -1,0 +1,110 @@
+'Script Name:      Aggregate
+'Date Generated:   Created  10/29/2015
+'Purposes:         Aggregate cruise data from several sources
+'
+'Inputs Required:  User specifies root locations
+'
+'Revision History:  1. 11/2/2015 Added import for Zentzis including tally column
+'
+'Outline: 1. Set ROOT folder name
+'------------------------------------------------------------------------------------------------------------------------
+Public Sub AggregateCruiseData()
+ Dim db As DAO.Database
+ Dim fso As FileSystemObject
+ Dim fsoFolder As folder
+ Dim fsoSubFolder As folder
+ Dim fsoFile As File
+ Dim rs As ADODB.Recordset
+ Dim cat As ADOX.Catalog
+ Dim bAppend As Boolean
+ Dim ROOT As String, str As String
+ 
+ Set db = CurrentDb
+ Set fso = New FileSystemObject
+ Set rs = New ADODB.Recordset
+ Set cat = New ADOX.Catalog
+ Set cat.ActiveConnection = CurrentProject.Connection
+
+ ROOT = "C:\Client\premer\0101456 - \CruiseData\"
+
+ 'Delete all records with Status of INCOMING
+ db.Execute "DELETE * FROM AllCruiseData;"
+ 
+ 'Drop tables; but don't give error if table doesn't exist
+   DropTableIfExists ("Temp_STAND")
+   DropTableIfExists ("Temp_PLOT")
+   DropTableIfExists ("Temp_TREE")
+   DropTableIfExists ("Temp_ALL")
+ 
+ 'NWFS
+ Set fsoRootFolder = fso.GetFolder(ROOT & "NWFS")
+ For Each fsoSubFolder In fsoRootFolder.SubFolders
+   'Drop the temporary table
+   DropTableIfExists ("Temp_STAND")
+   DropTableIfExists ("Temp_PLOT")
+   DropTableIfExists ("Temp_TREE")
+   DropTableIfExists ("Temp_ALL")
+
+   'Import the STAND,PLOT, and TREE text files
+   Debug.Print fsoSubFolder.Name
+   For Each fsoFile In fsoSubFolder.Files
+     Debug.Print fsoFile.Name
+     If InStr(LCase(fsoFile.Name), "stand.txt") Then
+       DoCmd.TransferText acImportDelim, "ImportStand", "Temp_Stand", fsoFile, True
+     ElseIf InStr(LCase(fsoFile.Name), "plot.txt") Then
+       DoCmd.TransferText acImportDelim, "ImportPlot", "Temp_Plot", fsoFile, True
+     ElseIf InStr(LCase(fsoFile.Name), "tree.txt") Then
+       DoCmd.TransferText acImportDelim, "ImportTree", "Temp_Tree", fsoFile, True
+     End If
+   Next
+   'Combine three text files
+   DropTableIfExists ("Temp_All")
+   str = " SELECT Temp_Stand.STANDID, Temp_Stand.BAF, Temp_Plot.PLOT, Temp_Plot.CRU, Temp_Plot.DATE, TRE, SP, G, TAL, DBH, TOTHT, FOR, CRN, DEF, Field13, Field14, D, Temp_Tree.NOTE "
+   str = str & " INTO Temp_All FROM (Temp_Stand INNER JOIN Temp_Plot ON Temp_Stand.STANDID = Temp_Plot.STANDID) INNER JOIN Temp_Tree ON (Temp_Plot.STANDID = Temp_Tree.STANDID) AND (Temp_Plot.PLOT = Temp_Tree.PLOT);"
+   Debug.Print str
+   db.Execute str
+   
+   'Append to AllCruiseData
+   str = " INSERT INTO AllCruiseData ( Stand, BAF, PLOT, Cruiser, [DATE], Tree, SPP, GRP, DBH,HT,CR,FF,Def_B,Def_M,Def_T,Damage,Tally,Notes )"
+   str = str & " SELECT STANDID, BAF, PLOT, CRU, DATE, TRE, SP, G,DBH, TOTHT,CRN,FOR,DEF,Field13,Field14,D,TAL,NOTE FROM Temp_All;"
+   db.Execute str
+   
+ Next
+ 'Drop the temporary table
+ DropTableIfExists ("Temp_STAND")
+ DropTableIfExists ("Temp_PLOT")
+ DropTableIfExists ("Temp_TREE")
+ DropTableIfExists ("Temp_All")
+          
+ 'Cruiser
+ Set fsoRootFolder = fso.GetFolder(ROOT & "CruiserName")
+ For Each fsoSubFolder In fsoRootFolder.SubFolders
+   'Drop the temporary table
+   DropTableIfExists ("Temp_STAND")
+   DropTableIfExists ("Temp_PLOT")
+   DropTableIfExists ("Temp_TREE")
+   DropTableIfExists ("Temp_ALL")
+
+   'Import the STAND,PLOT, and TREE text files
+   Debug.Print fsoSubFolder.Name
+   For Each fsoFile In fsoSubFolder.Files
+     Debug.Print fsoFile.Name
+     If InStr(LCase(fsoFile.Name), "stand.txt") Then
+       DoCmd.TransferText acImportDelim, "ImportStand", "Temp_Stand", fsoFile, True
+     ElseIf InStr(LCase(fsoFile.Name), "plot.txt") Then
+       DoCmd.TransferText acImportDelim, "ImportPlot", "Temp_Plot", fsoFile, True
+     ElseIf InStr(LCase(fsoFile.Name), "tree.txt") Then
+       DoCmd.TransferText acImportDelim, "ImportTree", "Temp_Tree", fsoFile, True
+     End If
+   Next
+   'Combine three text files
+   DropTableIfExists ("Temp_All")
+   str = " SELECT Temp_Stand.STANDID, Temp_Stand.BAF, Temp_Plot.PLOT, Temp_Plot.CRU, Temp_Plot.DATE, TRE, SP, G, TAL, DBH, TOTHT, FOR, CRN, DEF, Field13, Field14, D, Temp_Tree.NOTE "
+   str = str & " INTO Temp_All FROM (Temp_Stand INNER JOIN Temp_Plot ON Temp_Stand.STANDID = Temp_Plot.STANDID) INNER JOIN Temp_Tree ON (Temp_Plot.STANDID = Temp_Tree.STANDID) AND (Temp_Plot.PLOT = Temp_Tree.PLOT);"
+   Debug.Print str
+   db.Execute str
+   
+   'Append to AllCruiseData
+   str = " INSERT INTO AllCruiseData ( Stand, BAF, PLOT, Cruiser, [DATE], Tree, SPP, GRP, DBH,HT,CR,FF,Def_B,Def_M,Def_T,Damage,Tally,Notes )"
+   str = str & " SELECT STANDID, BAF, PLOT, CRU, DATE, TRE, SP, G,DBH, TOTHT,CRN,FOR,DEF,Field13,Field14,D,TAL,NOTE FROM Temp_All;"
+   db.Execute str
