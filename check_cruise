@@ -1,4 +1,3 @@
-# October 16 2015
 # Sorting through Check cruise Data
 # Premer, M.I.
 
@@ -9,7 +8,6 @@ library(ggplot2)
 library(gridExtra)
 
 # __________ cruise
-# Read raw file from the MB&G Web App
 checkcruise <- read_excel("C:/Users/mpremer/Desktop/Cruise_Data_2015-10-14-11-30-31.xls",sheet="Trees")
 str(checkcruise)
 
