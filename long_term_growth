@@ -9,9 +9,9 @@ library(reshape)
 library(ggplot2)
 library(tidyr)
 
-#data <- read_excel("C:/Users/mpremer/Desktop/PCH.xls",sheet="data DF")
+#data <- read_excel("C:/Users/mpremer/Desktop/data.xls",sheet="data DF")
 # run this, then use dev.off and rm(list=ls()) before running the second "data" dataframe
-data <- read_excel("C:/Users/mpremer/Desktop/PCH.xls",sheet="data DF planted")
+data <- read_excel("C:/Users/mpremer/Desktop/data.xls",sheet="data DF planted")
 
 
 data.df <- data %>%
