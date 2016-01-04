@@ -3,7 +3,7 @@ library(dplyr)
 library(ggplot2)
 # any stand names with characters "/" will need to be modified to delete these characters
 
-dataset <- read.csv("S:/Client/CruiseSupport/QAQC/CHECK_AGE_RANGES.csv",head=TRUE)
+
 dataset <- filter(dataset, Status=="INCOMING")
 dataset["TreeUsedForCalculation"] <- factor(dataset$TreeUsedForCalculation)
 dataset["CalculatedStandAge"] <- as.numeric(dataset$CalculatedStandAge)
