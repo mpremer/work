@@ -8,7 +8,7 @@ library(ggplot2)
 library(gridExtra)
 
 # __________ cruise
-checkcruise <- read_excel("C:/Users/mpremer/Desktop/Cruise_Data_2015-10-14-11-30-31.xls",sheet="Trees")
+checkcruise <- read_excel("C:/Users/mpremer/Desktop/Cruise_Data.xls",sheet="Trees")
 str(checkcruise)
 
 # Data needs to be numeric, currently set as Character
