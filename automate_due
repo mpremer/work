@@ -1,5 +1,3 @@
-# this is working from a FPS database
-
 library(readxl)
 library(dplyr)
 library(xlsx)
