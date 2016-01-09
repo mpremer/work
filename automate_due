@@ -51,7 +51,7 @@ dataset[is.na(dataset)] <- 0
 
 setwd("C:/Users/mpremer/Desktop")
 # write the population file to the working directory
-write.xlsx(dataset, "C:/Users/mpremer/Desktop/Snoqualmie_stand_summary.xlsx",sheetName="Population")
+write.xlsx(dataset, "C:/Users/mpremer/Desktop/stand_summary.xlsx",sheetName="Population")
 
 # create a list to send to GIS of selected stands
 for_gis <- filter(dataset, count=="1")
