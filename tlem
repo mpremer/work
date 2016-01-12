@@ -1,5 +1,4 @@
 # 1.8.2016
-# Premer.M.I.
 
 library(readxl)
 library(dplyr)
@@ -7,26 +6,8 @@ library(ggplot2)
 library(xlsx)
 library(reshape2)
 
-meta <- read_excel("C:/Users/mpremer/Desktop/meta.xls",sheet="Sheet1")
+meta <- read_excel("S:/Meta/meta.xls",sheet="Sheet1")
 meta$StandID <- as.factor(meta$StandID)
-
-slice.tpa <- meta %>%
-  group_by(StandID,Treatment,sdi.key) %>%
-  summarize('5' = mean(tpa.2020,ba),
-            '10' = mean(tpa.2025),
-            '25' = mean(tpa.2040),
-            '50' = mean(tpa.2065),
-            '100' = mean(tpa.2115))
-
-trial <- filter(slice.tpa, StandID == 100101)
-as.data.frame(trial)
-molten <- melt(as.data.frame(trial),id=c("StandID","Treatment","sdi.key"))
-molten <- rename(molten, Age = variable, TPA = value)
-
-theme_set(theme_bw(10))
-ggplot(subset(molten, sdi.key %in% c("yes","no"),fill=sdi.key))+
-  geom_point(aes(x=Age, y=TPA, group=sdi.key,colour=sdi.key,shape=sdi.key))+
-  facet_wrap(~Treatment)
 
 slice.vol <- meta %>%
   group_by(StandID,Treatment,sdi.key) %>%
@@ -36,22 +17,38 @@ slice.vol <- meta %>%
             '50' = mean(nvol.2065),
             '100' = mean(nvol.2115))
 
-trial <- filter(slice.vol, StandID == 100101)
-as.data.frame(trial)
-molten <- melt(as.data.frame(trial),id=c("StandID","Treatment","sdi.key"))
+molten <- melt(as.data.frame(slice.vol),id=c("StandID","Treatment","sdi.key"))
 molten <- rename(molten, Age = variable, Volume = value)
+#################
+setwd("S:/Meta")
+write.xlsx(molten, "S:/Meta/FVS.xlsx")
+dev.off
+rm(list=ls())
 
-# this works
-theme_set(theme_bw(10))
-ggplot(subset(molten, sdi.key %in% c("yes","no"),fill=sdi.key))+
-  geom_point(aes(x=Age, y=Volume, group=sdi.key,colour=sdi.key,shape=sdi.key),size=I(5))+
-  ylab(bquote('Net Volume'~ ('Ft' ~ ""^{-3})))+
-  facet_wrap(~Treatment)
+library(readxl)
+library(ggplot2)
 
-# this works too
-ggplot(molten, aes(x=Age,y=Volume, colour=factor(sdi.key)))+
-  geom_point()+
-  stat_smooth(aes(group=1),method="gam",formula=y~s(x,k=3),se=TRUE)+
-  ylab(bquote('Net Volume'~ ('Ft' ~ ""^{-3})))+
-  facet_wrap(~Treatment)
-freeze <- left_join(slice.vol,slice.tpa, by = c("StandID"))
+molten <- read_excel("S:/Meta/FVS.xls",sheet="Sheet1")
+molten <- molten[,-1]
+molten$StandID <- as.numeric(molten$StandID)
+molten$Age <- as.numeric(molten$Age)
+molten$sdi.key <- as.factor(molten$sdi.key)
+molten$silv[molten$Treatment=="Treatment.1"] <- "Control"
+molten$silv[molten$Treatment=="Treatment.2"] <- "PCT to 300 TPA at Age 18"
+molten$silv[molten$Treatment=="Treatment.3"] <- "PCT to 300 TPA at Age 18 & Fertilize"
+molten$silv[molten$Treatment=="Treatment.4"] <- "Thin from 60 to 40 RDI"
+molten$silv[molten$Treatment=="Treatment.5"] <- "Thin from 60 to 40 RDI & Fertilize"
+
+stand_list <- unique(molten$StandID)
+theme_set(theme_bw(4))
+for (i in stand_list)
+{
+  plot_data = subset(molten, StandID==i)
+  plot <- ggplot(plot_data,aes(x=Age,y=Volume,colour=factor(sdi.key),shape=factor(sdi.key)))+
+    geom_point(size=I(2))+
+    stat_smooth(aes(group=1),method="gam",formula=y~s(x,k=3),se=TRUE)+
+    facet_wrap(~silv)+
+    labs(x = 'Stand age (years)',y=(bquote('Net Volume'~('Ft'~""^{-3}))),title=paste("FVS Trial - Stand ",i,sep=""))+
+    ylim(0,15000)+
+    ggsave(filename=paste("Stand ",i,".pdf",sep=""))
+}
